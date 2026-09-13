@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { JSDOM, VirtualConsole } = require('jsdom');
 
-const FILE = path.resolve(__dirname, '..', 'math-game.html');
+const FILE = path.resolve(__dirname, '..', 'index.html');
 const html = fs.readFileSync(FILE, 'utf8');
 
 let pass = 0, fail = 0;

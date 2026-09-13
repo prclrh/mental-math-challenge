@@ -2,7 +2,9 @@
 
 一个零依赖的单文件网页小游戏：限时刷四则运算题，实时判分，结束后给出成绩单和错题回顾。难度、题量、时长都能自己调，适合给孩子做口算练习。
 
-**直接用浏览器打开 `math-game.html` 即可开始，不需要安装任何东西。**
+**在线试玩：<https://prclrh.github.io/mental-math-challenge/>** —— 手机、平板、电脑浏览器打开就能玩。
+
+也可以直接双击 `index.html`，不需要安装任何东西。
 
 ## 功能
 
@@ -33,14 +35,16 @@
 
 ## 使用
 
-直接双击 `math-game.html`，或用任意浏览器打开：
+在线直接玩：<https://prclrh.github.io/mental-math-challenge/>
+
+离线也可以双击 `index.html`，或用任意浏览器打开：
 
 ```bash
 # macOS
-open math-game.html
+open index.html
 
 # Windows
-start math-game.html
+start index.html
 ```
 
 手机上可以用浏览器的「添加到主屏幕」，获得接近 App 的全屏体验。
