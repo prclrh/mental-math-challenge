@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#eef2f9">
+<title>四则运算挑战 · 可配置练习</title>
+<style>
+  :root{
+    --card:#ffffff;
+    --text:#1f2937;
+    --muted:#6b7a90;
+    --line:#e4e9f2;
+    --accent:#3b6ef5;
+    --accent-soft:#eaf0ff;
+    --ok:#16a34a;
+    --ok-soft:#e8f8ee;
+    --bad:#e5484d;
+    --bad-soft:#fdeded;
+    --shadow:0 12px 32px rgba(23,43,77,.09);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    color:var(--text);
+    background:linear-gradient(165deg,#f2f6fd 0%,#e9eefb 48%,#eaf7f3 100%);
+    display:flex;justify-content:center;
+    padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+    -webkit-text-size-adjust:100%;
+  }
+  .app{width:100%;max-width:680px;display:flex;flex-direction:column;gap:12px}
+
+  /* ---------- 顶部 ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px;letter-spacing:.2px}
+  .brand .dot{width:26px;height:26px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#22b8a6);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;flex:0 0 auto}
+  .brand small{display:block;font-weight:500;font-size:11px;color:var(--muted);letter-spacing:.3px;margin-top:1px}
+  .clock{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:7px 13px;box-shadow:var(--shadow);font-variant-numeric:tabular-nums}
+  .clock .lbl{font-size:11px;color:var(--muted);letter-spacing:.5px;text-align:center}
+  .clock .val{font-size:22px;font-weight:750;letter-spacing:.5px;min-width:74px;text-align:center;transition:color .2s}
+  .clock .val.warn{color:var(--bad)}
+  .clock.pulse{animation:pulse .9s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+
+  .timebar{height:5px;border-radius:99px;background:#e2e8f4;overflow:hidden}
+  .timebar i{display:block;height:100%;width:100%;border-radius:99px;
+    background:linear-gradient(90deg,#3b6ef5,#22b8a6);transition:width .12s linear}
+  .timebar.low i{background:linear-gradient(90deg,#f59e0b,#e5484d)}
+
+  /* ---------- 统计 ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:9px 6px;text-align:center;box-shadow:var(--shadow)}
+  .stat b{display:block;font-size:19px;font-weight:750;font-variant-numeric:tabular-nums;line-height:1.25}
+  .stat span{font-size:11px;color:var(--muted)}
+  .stat.ok b{color:var(--ok)} .stat.bad b{color:var(--bad)}
+
+  /* ---------- 答题卡片 ---------- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;
+    padding:20px 18px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+    transition:border-color .15s,background .15s}
+  .card.ok{border-color:#b7e6c8;background:linear-gradient(180deg,#f7fdf9,#fff)}
+  .card.bad{border-color:#f6c3c5;background:linear-gradient(180deg,#fef8f8,#fff)}
+  .qno{font-size:12px;color:var(--muted);letter-spacing:.4px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .qno em{font-style:normal;color:var(--accent);font-weight:600}
+  .q-row{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:16px 0 6px}
+  .q-text{font-size:clamp(28px,9vw,44px);font-weight:750;letter-spacing:1px;font-variant-numeric:tabular-nums;text-align:center}
+  .eq{font-size:clamp(24px,7.5vw,36px);font-weight:600;color:var(--muted)}
+  .ans-input{width:clamp(104px,30vw,164px);height:clamp(54px,14vw,68px);
+    font-size:clamp(25px,8vw,36px);font-weight:700;text-align:center;
+    border:2px solid #cfdaf0;border-radius:15px;background:#fbfcff;color:var(--text);
+    outline:none;font-variant-numeric:tabular-nums;transition:border-color .15s,box-shadow .15s,background .15s}
+  .ans-input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft);background:#fff}
+  .ans-input:disabled{opacity:1;-webkit-text-fill-color:var(--text)}
+  .card.ok .ans-input{border-color:#8fd7a8;background:var(--ok-soft)}
+  .card.bad .ans-input{border-color:#f0a8ab;background:var(--bad-soft)}
+  .feedback{min-height:30px;text-align:center;font-size:15px;font-weight:600;margin-top:8px;opacity:0;transition:opacity .12s}
+  .feedback.show{opacity:1}
+  .feedback.ok{color:var(--ok)} .feedback.bad{color:var(--bad)}
+
+  .actions{display:flex;gap:10px;margin-top:14px}
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:14px;font-weight:650;
+    transition:transform .08s,filter .15s,background .15s,border-color .15s,color .15s}
+  button:active{transform:scale(.975)}
+  .btn-primary{flex:1;padding:15px;font-size:17px;color:#fff;
+    background:linear-gradient(135deg,#3b6ef5,#2f8bf0);box-shadow:0 8px 20px rgba(59,110,245,.28)}
+  .btn-primary:hover{filter:brightness(1.05)}
+  .btn-ghost{padding:15px 16px;font-size:15px;color:var(--muted);background:#f2f5fb;border:1px solid var(--line);white-space:nowrap}
+  .btn-ghost:hover{color:var(--bad);background:#fdeded;border-color:#f6c3c5}
+  .btn-ghost.blue:hover{color:var(--accent);background:var(--accent-soft);border-color:#c3d3f5}
+  .hint{font-size:11.5px;color:var(--muted);text-align:center;letter-spacing:.3px;margin-top:10px}
+
+  /* ---------- 弹层 ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(24,38,64,.42);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;padding:14px;z-index:20}
+  .overlay.show{display:flex}
+  .panel{width:100%;max-width:560px;max-height:90vh;overflow:auto;background:var(--card);
+    border-radius:22px;padding:22px 20px;box-shadow:0 24px 60px rgba(15,30,60,.28);
+    animation:pop .22s cubic-bezier(.2,.9,.3,1.1);-webkit-overflow-scrolling:touch}
+  @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+  .panel h2{margin:0 0 5px;font-size:21px;letter-spacing:.3px}
+  .panel p.sub{margin:0 0 16px;font-size:12.5px;color:var(--muted)}
+
+  /* 设置区 */
+  .setting{margin-bottom:16px}
+  .setting>.lbl{font-size:13px;font-weight:700;color:#3c4a5f;margin-bottom:9px;
+    display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .setting>.lbl em{font-style:normal;font-size:11.5px;font-weight:500;color:var(--muted)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1.5px solid var(--line);background:#fff;color:#3c4a5f;border-radius:12px;
+    padding:9px 14px;font-size:14px;font-weight:650;line-height:1.2}
+  .chip:hover{border-color:#c3d3f5;color:var(--accent)}
+  .chip.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);
+    box-shadow:0 0 0 3px rgba(59,110,245,.08)}
+  .chip.diff{flex:1 1 calc(50% - 4px);display:flex;flex-direction:column;gap:2px;align-items:flex-start;
+    padding:11px 13px;text-align:left;min-width:130px}
+  .chip.diff small{font-weight:500;font-size:11px;color:var(--muted);line-height:1.35}
+  .chip.diff.active small{color:#6b8bff}
+  .chip.off{opacity:.42;cursor:not-allowed}
+  .chip.off:hover{border-color:var(--line);color:#3c4a5f}
+
+  .desc{margin-top:9px;font-size:12.5px;color:var(--muted);line-height:1.5;
+    background:#f7f9fe;border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+  .desc b{color:#3c4a5f}
+
+  .adv-toggle{margin-top:10px;background:none;border:none;padding:4px 0;color:var(--accent);
+    font-size:12.5px;font-weight:650;display:flex;align-items:center;gap:5px}
+  .adv-toggle i{font-style:normal;transition:transform .18s;display:inline-block;font-size:11px}
+  .adv-toggle.open i{transform:rotate(90deg)}
+  .adv{display:none;margin-top:10px;padding:13px;border:1px dashed #d5e0f5;border-radius:14px;background:#f9fbff}
+  .adv.show{display:block}
+  .advrow{margin-bottom:13px}
+  .advrow:last-child{margin-bottom:0}
+  .advrow .lbl{font-size:12.5px;margin-bottom:7px;color:#3c4a5f;font-weight:650}
+  .chip.sm{padding:7px 12px;font-size:13px;border-radius:10px}
+
+  .custom-row{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+  .custom-row input{width:98px;padding:9px 8px;font-size:14px;font-weight:700;color:var(--text);
+    border:1.5px solid var(--line);border-radius:11px;outline:none;background:#fbfcff;text-align:center;
+    font-family:inherit;font-variant-numeric:tabular-nums}
+  .custom-row input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .custom-row input.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+
+  .tip{font-size:12px;color:var(--bad);margin-top:8px;display:none;line-height:1.4}
+  .tip.show{display:block}
+
+  .summary{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;
+    background:#f4f8ff;border:1px solid #dfe8fb;border-radius:13px;padding:11px 13px;
+    font-size:13.5px;font-weight:650;color:#2f4a86;margin-bottom:14px;text-align:center}
+  .summary b{color:var(--accent)}
+  .panel .btn-primary{width:100%;padding:15px;font-size:16.5px}
+
+  /* 结算 */
+  .recap{font-size:12.5px;color:var(--muted);background:#f7f9fe;border:1px solid var(--line);
+    border-radius:12px;padding:9px 12px;margin:2px 0 14px;text-align:center;line-height:1.5}
+  .recap b{color:#3c4a5f}
+  .score{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:0 0 16px}
+  .score div{background:#f7f9fe;border:1px solid var(--line);border-radius:14px;padding:11px 12px}
+  .score span{display:block;font-size:11.5px;color:var(--muted);margin-bottom:3px}
+  .score b{font-size:21px;font-weight:760;font-variant-numeric:tabular-nums}
+  .score .hi{color:var(--accent)} .score .gr{color:var(--ok)} .score .rd{color:var(--bad)}
+  .sect{font-size:13px;font-weight:700;color:#3c4a5f;margin:0 0 9px;display:flex;justify-content:space-between}
+  .sect em{font-style:normal;color:var(--muted);font-weight:500}
+  .wrongs{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:7px;max-height:32vh;overflow:auto}
+  .wrongs li{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:#fbfcfe;border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-size:14px}
+  .wrongs li .q{font-weight:650;font-variant-numeric:tabular-nums}
+  .wrongs li .a{font-size:12.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .wrongs li .a u{color:var(--bad);text-decoration:none} .wrongs li .a b{color:var(--ok)}
+  .empty{background:var(--ok-soft);border:1px solid #b7e6c8;color:var(--ok);border-radius:12px;
+    padding:14px;text-align:center;font-size:14px;font-weight:600;margin-bottom:16px}
+
+  @media (max-width:380px){
+    .stats{gap:6px} .stat b{font-size:17px} .stat span{font-size:10px}
+    .brand{font-size:15px} .clock .val{font-size:19px;min-width:66px}
+    .chip.diff{flex:1 1 100%;min-width:0}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="dot">÷</span>
+      <span>四则运算挑战<small id="brandSub">100 以内的加、减、乘、除</small></span>
+    </div>
+    <div class="clock" id="clockBox">
+      <div><div class="lbl">剩余时间</div></div>
+      <div class="val" id="timeText">03:00</div>
+    </div>
+  </div>
+
+  <div class="timebar" id="timeBar"><i id="timeFill"></i></div>
+
+  <div class="stats">
+    <div class="stat"><b id="sDone">0</b><span>已答题</span></div>
+    <div class="stat ok"><b id="sOk">0</b><span>正确</span></div>
+    <div class="stat bad"><b id="sBad">0</b><span>错误</span></div>
+    <div class="stat"><b id="sRate">0%</b><span>正确率</span></div>
+  </div>
+
+  <div class="card" id="qCard">
+    <div class="qno"><span id="qNo">准备开始</span><span>进度 <em id="qProgress">0 / 100</em></span></div>
+    <div class="q-row">
+      <span class="q-text" id="qText">—</span>
+      <span class="eq">=</span>
+      <input id="answerInput" class="ans-input" type="text" inputmode="numeric" autocomplete="off"
+             autocorrect="off" spellcheck="false" placeholder="?" disabled>
+    </div>
+    <div class="feedback" id="fb"></div>
+    <div class="actions">
+      <button class="btn-primary" id="btnSubmit">提 交</button>
+      <button class="btn-ghost" id="btnFinish">交卷</button>
+    </div>
+    <div class="hint">回车提交 · 答完自动跳下一题</div>
+  </div>
+
+  <!-- ========== 设置 / 开始 ========== -->
+  <div class="overlay show" id="startScreen">
+    <div class="panel">
+      <h2>四则运算挑战</h2>
+      <p class="sub">难度、题量、时长都可以自己定，孩子练哪一档你说了算</p>
+
+      <!-- 难度 -->
+      <div class="setting">
+        <div class="lbl"><span>① 题目难度</span><em id="diffName"></em></div>
+        <div class="chips" id="diffChips">
+          <button class="chip diff" data-diff="easy">入门<small>10 以内加减</small></button>
+          <button class="chip diff" data-diff="basic">基础<small>20 以内 + 表内乘除</small></button>
+          <button class="chip diff" data-diff="std">标准<small>100 以内四则运算</small></button>
+          <button class="chip diff" data-diff="hard">挑战<small>100 以内 + 两步混合</small></button>
+        </div>
+        <div class="desc" id="diffDesc"></div>
+
+        <button class="adv-toggle" id="advToggle"><i>&#9654;</i>高级：自定义数字范围与运算类型</button>
+        <div class="adv" id="advPanel">
+          <div class="advrow">
+            <div class="lbl">数字上限（运算数与结果都不超过）</div>
+            <div class="chips" id="maxChips">
+              <button class="chip sm" data-max="10">10</button>
+              <button class="chip sm" data-max="20">20</button>
+              <button class="chip sm" data-max="50">50</button>
+              <button class="chip sm" data-max="100">100</button>
+            </div>
+          </div>
+          <div class="advrow">
+            <div class="lbl">包含运算（可多选，至少一种）</div>
+            <div class="chips" id="opChips">
+              <button class="chip sm" data-op="add">加法</button>
+              <button class="chip sm" data-op="sub">减法</button>
+              <button class="chip sm" data-op="mul">乘法</button>
+              <button class="chip sm" data-op="div">除法</button>
+            </div>
+          </div>
+          <div class="advrow">
+            <div class="lbl">两步混合运算</div>
+            <div class="chips">
+              <button class="chip sm" id="mixChip" data-mix="1">含混合运算（如 7 + 6 × 8）</button>
+            </div>
+          </div>
+          <div class="tip" id="advTip"></div>
+        </div>
+      </div>
+
+      <!-- 题量 -->
+      <div class="setting">
+        <div class="lbl"><span>② 题目数量</span><em id="countName"></em></div>
+        <div class="chips" id="countChips">
+          <button class="chip" data-count="20">20 题</button>
+          <button class="chip" data-count="50">50 题</button>
+          <button class="chip" data-count="100">100 题</button>
+          <button class="chip" data-count="200">200 题</button>
+        </div>
+        <div class="custom-row">
+          <span>自定义</span>
+          <input id="countCustom" type="number" min="5" max="500" step="5" placeholder="5 - 500">
+          <span>题</span>
+        </div>
+        <div class="tip" id="countTip"></div>
+      </div>
+
+      <!-- 时长 -->
+      <div class="setting">
+        <div class="lbl"><span>③ 答题时间</span><em id="timeName"></em></div>
+        <div class="chips" id="timeChips">
+          <button class="chip" data-sec="60">1 分钟</button>
+          <button class="chip" data-sec="120">2 分钟</button>
+          <button class="chip" data-sec="180">3 分钟</button>
+          <button class="chip" data-sec="300">5 分钟</button>
+        </div>
+        <div class="custom-row">
+          <span>自定义</span>
+          <input id="timeCustom" type="number" min="30" max="3600" step="30" placeholder="30 - 3600">
+          <span>秒</span>
+          <span id="timeHint"></span>
+        </div>
+        <div class="tip" id="timeTip"></div>
+      </div>
+
+      <div class="summary" id="summary"></div>
+      <button class="btn-primary" id="btnStart">开始挑战</button>
+    </div>
+  </div>
+
+  <!-- ========== 结算 ========== -->
+  <div class="overlay" id="endScreen">
+    <div class="panel">
+      <h2 id="endTitle">挑战结束</h2>
+      <p class="sub" id="endSub">这是你的成绩单</p>
+      <div class="recap" id="recap"></div>
+      <div class="score">
+        <div><span>正确率</span><b class="hi" id="rRate">0%</b></div>
+        <div><span>用时</span><b id="rTime">00:00</b></div>
+        <div><span>答对</span><b class="gr" id="rOk">0</b></div>
+        <div><span>答错 / 漏答</span><b class="rd" id="rBad">0</b></div>
+      </div>
+      <div class="sect"><span>错题回顾</span><em id="wrongCount"></em></div>
+      <div id="wrongBox"></div>
+      <div class="actions">
+        <button class="btn-primary" id="btnRestart">再来一局</button>
+        <button class="btn-ghost blue" id="btnSettings">调整设置</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var el = function (id) { return document.getElementById(id); };
+  var STORE_KEY = 'mathgame.setup.v1';
+  var COUNT_MIN = 5, COUNT_MAX = 500, SEC_MIN = 30, SEC_MAX = 3600;
+
+  /* ================= 难度预设 ================= */
+  var PRESETS = {
+    easy:  { label: '入门', desc: '10 以内加减法，不出现乘除',       addMax: 10,  subMax: 10,  mulMax: 0,   divMax: 0,   mixed: false },
+    basic: { label: '基础', desc: '20 以内加减 + 表内乘除法',        addMax: 20,  subMax: 20,  mulMax: 81,  divMax: 81,  mixed: false },
+    std:   { label: '标准', desc: '100 以内加减 + 100 以内乘除法',   addMax: 100, subMax: 100, mulMax: 100, divMax: 100, mixed: false },
+    hard:  { label: '挑战', desc: '100 以内四则运算 + 两步混合运算', addMax: 100, subMax: 100, mulMax: 100, divMax: 100, mixed: true  }
+  };
+
+  var config = { diff: 'std', addMax: 100, subMax: 100, mulMax: 100, divMax: 100, mixed: false, count: 100, seconds: 180 };
+  var draft  = { max: 100, add: true, sub: true, mul: true, div: true, mixed: false };
+  var usingCustomCount = false;
+  var usingCustomTime = false;
+
+  /* ================= 工具 ================= */
+  function rnd(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+  function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+  function shuffle(arr) {
+    for (var i = arr.length - 1; i > 0; i--) { var j = rnd(0, i); var t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
+    return arr;
+  }
+  function fmt(sec) {
+    sec = Math.max(0, Math.round(sec));
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  /* ================= 出题器（全部保证在设定上限内） ================= */
+  function genAdd(max) {
+    return function () {
+      var a = rnd(2, Math.max(3, max - 2));
+      var b = rnd(2, Math.max(2, max - a));
+      return { t: a + ' + ' + b, v: a + b };
+    };
+  }
+  function genSub(max) {
+    return function () {
+      var a = rnd(4, max);
+      var b = rnd(2, Math.max(2, a - 2));
+      return { t: a + ' - ' + b, v: a - b };
+    };
+  }
+  function genMul(max) {
+    return function () {
+      var a = rnd(2, clamp(Math.floor(max / 2), 2, 10));
+      var b = rnd(2, clamp(Math.floor(max / a), 2, 10));
+      return { t: a + ' × ' + b, v: a * b };
+    };
+  }
+  function genDiv(max) {
+    return function () {
+      var b = rnd(2, clamp(Math.floor(max / 2), 2, 10));
+      var q = rnd(2, clamp(Math.floor(max / b), 2, 10));
+      return { t: (b * q) + ' ÷ ' + b, v: q };
+    };
+  }
+  // 两步混合：每个运算数、中间值与最终结果都不超过 cap
+  function genMixed(cap) {
+    return [
+      function () {                                  // x + y × z
+        var y = rnd(2, 9);
+        var z = rnd(2, clamp(Math.floor((cap - 2) / y), 2, 9));
+        var p = y * z;                               // p <= cap - 2
+        var x = rnd(2, cap - p);
+        return { t: x + ' + ' + y + ' × ' + z, v: x + p };
+      },
+      function () {                                  // x × y - z
+        var x = rnd(2, 9);
+        var y = rnd(2, clamp(Math.floor(cap / x), 2, 9));
+        var p = x * y;                               // p <= cap
+        if (p < 5) return null;
+        var z = rnd(1, p - 1);
+        return { t: x + ' × ' + y + ' - ' + z, v: p - z };
+      },
+      function () {                                  // x + y ÷ z
+        var z = rnd(2, 9);
+        var qMax = clamp(Math.floor(Math.min(60, cap) / z), 2, 9);
+        var q = rnd(2, qMax);
+        var x = rnd(2, Math.max(2, cap - q));
+        return { t: x + ' + ' + (z * q) + ' ÷ ' + z, v: x + q };
+      }
+    ];
+  }
+
+  function buildQuestions(cfg, count) {
+    var base = [], mix = [];
+    if (cfg.addMax > 0) base.push(genAdd(cfg.addMax));
+    if (cfg.subMax > 0) base.push(genSub(cfg.subMax));
+    if (cfg.mulMax > 0) base.push(genMul(cfg.mulMax));
+    if (cfg.divMax > 0) base.push(genDiv(cfg.divMax));
+    if (cfg.mixed && cfg.addMax >= 50) mix = genMixed(Math.min(cfg.addMax, 100));
+    if (!base.length) base.push(genAdd(10));
+
+    // 四则运算均匀轮转；开启混合时每 4 题插入 1 道混合题（占 25%）
+    var arr = [], seen = {}, bi = 0, mi = 0;
+    for (var i = 0; i < count; i++) {
+      var useMix = mix.length > 0 && (i + 1) % 4 === 0;
+      var src = useMix ? mix : base;
+      var q = src[(useMix ? mi++ : bi++) % src.length]();
+      var guard = 0;
+      while ((!q || seen[q.t]) && guard < 40) {    // 尽量避免同一局重复出题
+        q = src[rnd(0, src.length - 1)](); guard++;
+      }
+      if (!q) q = { t: '1 + 1', v: 2 };
+      seen[q.t] = 1;
+      arr.push(q);
+    }
+    return shuffle(arr);                           // 打乱顺序
+  }
+
+  /* ================= 运行时状态 ================= */
+  var questions = [], idx = 0, answered = 0, correct = 0, wrong = 0, wrongList = [];
+  var state = 'idle';                                    // idle | playing | feedback | ended
+  var gTotal = 100, gDuration = 180;
+  var endTime = 0, timerId = null, fbTimer = null;
+
+  /* ================= 设置的文字呈现 ================= */
+  function diffName() { return config.diff === 'custom' ? '自定义' : PRESETS[config.diff].label; }
+  function opsText() {
+    var s = '';
+    if (config.addMax > 0) s += '加';
+    if (config.subMax > 0) s += '减';
+    if (config.mulMax > 0) s += '乘';
+    if (config.divMax > 0) s += '除';
+    return s || '无';
+  }
+  function rangeText() {
+    var m = Math.max(config.addMax, config.subMax, config.mulMax, config.divMax);
+    return m + ' 以内';
+  }
+  function descText() {
+    if (config.diff !== 'custom') return PRESETS[config.diff].desc;
+    return '自定义：' + rangeText() + '，运算 ' + opsText() + (config.mixed ? '，含两步混合' : '');
+  }
+  function summaryHTML() {
+    return '<b>' + diffName() + '</b> · ' + rangeText() + ' · ' + config.count + ' 题 · ' +
+      fmt(config.seconds) + ' · ' + opsText() + (config.mixed ? ' + 混合' : '');
+  }
+  function showTip(node, msg) {
+    node.textContent = msg || '';
+    node.className = 'tip' + (msg ? ' show' : '');
+  }
+
+  function syncChips() {
+    var i;
+    var dn = el('diffChips').children;                                   // 难度
+    for (i = 0; i < dn.length; i++) {
+      dn[i].className = 'chip diff' + (dn[i].getAttribute('data-diff') === config.diff ? ' active' : '');
+    }
+    var mc = el('maxChips').children;                                    // 数字上限
+    for (i = 0; i < mc.length; i++) {
+      mc[i].className = 'chip sm' + (+mc[i].getAttribute('data-max') === draft.max ? ' active' : '');
+    }
+    var oc = el('opChips').children;                                     // 运算类型
+    for (i = 0; i < oc.length; i++) {
+      oc[i].className = 'chip sm' + (draft[oc[i].getAttribute('data-op')] ? ' active' : '');
+    }
+    var mix = el('mixChip');                                             // 混合运算
+    mix.className = 'chip sm' + (draft.mixed ? ' active' : '') + (draft.max < 50 ? ' off' : '');
+
+    var cc = el('countChips').children;                                  // 题量
+    for (i = 0; i < cc.length; i++) {
+      var cv = +cc[i].getAttribute('data-count');
+      cc[i].className = 'chip' + (!usingCustomCount && config.count === cv ? ' active' : '');
+    }
+    var tc = el('timeChips').children;                                   // 时长
+    for (i = 0; i < tc.length; i++) {
+      var ts = +tc[i].getAttribute('data-sec');
+      tc[i].className = 'chip' + (!usingCustomTime && config.seconds === ts ? ' active' : '');
+    }
+  }
+
+  function renderSetup() {
+    el('diffName').textContent = '当前：' + diffName();
+    el('diffDesc').textContent = descText();
+    el('countName').textContent = '当前：' + config.count + ' 题';
+    el('timeName').textContent = '当前：' + fmt(config.seconds);
+
+    var cc = el('countCustom');
+    if (usingCustomCount) cc.value = config.count;
+    else if (document.activeElement !== cc) cc.value = '';
+    cc.className = usingCustomCount ? 'on' : '';
+
+    var tc = el('timeCustom');
+    if (usingCustomTime) tc.value = config.seconds;
+    else if (document.activeElement !== tc) tc.value = '';
+    tc.className = usingCustomTime ? 'on' : '';
+    el('timeHint').textContent = usingCustomTime ? '= ' + fmt(config.seconds) : '';
+
+    el('summary').innerHTML = summaryHTML();
+    el('btnStart').textContent = '开始挑战 · ' + config.count + ' 题 / ' + fmt(config.seconds);
+    syncChips();
+    save();
+  }
+
+  /* ================= 配置变更 ================= */
+  function applyPreset(key) {
+    var p = PRESETS[key];
+    if (!p) return;
+    config.diff = key;
+    config.addMax = p.addMax; config.subMax = p.subMax;
+    config.mulMax = p.mulMax; config.divMax = p.divMax;
+    config.mixed = p.mixed;
+    draft.max = p.addMax >= 100 ? 100 : (p.addMax >= 50 ? 50 : (p.addMax >= 20 ? 20 : 10));
+    draft.add = p.addMax > 0; draft.sub = p.subMax > 0;
+    draft.mul = p.mulMax > 0; draft.div = p.divMax > 0;
+    draft.mixed = p.mixed;
+    showTip(el('advTip'), '');
+    renderSetup();
+  }
+
+  function applyCustom() {
+    config.diff = 'custom';
+    var m = draft.max;
+    config.addMax = draft.add ? m : 0;
+    config.subMax = draft.sub ? m : 0;
+    config.mulMax = draft.mul ? m : 0;
+    config.divMax = draft.div ? m : 0;
+    config.mixed = draft.mixed && m >= 50;
+    renderSetup();
+  }
+
+  /* ================= 本地记忆 ================= */
+  function save() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        config: config, draft: draft,
+        usingCustomCount: usingCustomCount, usingCustomTime: usingCustomTime
+      }));
+    } catch (e) {}
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      var o = JSON.parse(raw);
+      if (!o || !o.config) return;
+      var c = o.config;
+      if (typeof c.count === 'number') config.count = clamp(Math.round(c.count), COUNT_MIN, COUNT_MAX);
+      if (typeof c.seconds === 'number') config.seconds = clamp(Math.round(c.seconds), SEC_MIN, SEC_MAX);
+      ['addMax', 'subMax', 'mulMax', 'divMax'].forEach(function (k) {
+        var v = +c[k];
+        if (!isFinite(v) || v < 0) return;
+        config[k] = v > 0 ? clamp(v, 10, 1000) : 0;
+      });
+      config.mixed = !!c.mixed;
+      if (PRESETS[c.diff] || c.diff === 'custom') config.diff = c.diff;
+      if (o.draft) {
+        if (typeof o.draft.max === 'number') draft.max = clamp(o.draft.max, 10, 100);
+        ['add', 'sub', 'mul', 'div', 'mixed'].forEach(function (k) {
+          if (typeof o.draft[k] === 'boolean') draft[k] = o.draft[k];
+        });
+      }
+      usingCustomCount = !!o.usingCustomCount;
+      usingCustomTime = !!o.usingCustomTime;
+    } catch (e) {}
+    if (config.addMax + config.subMax + config.mulMax + config.divMax <= 0) applyPreset('std');
+  }
+
+  /* ================= 渲染 ================= */
+  function renderStats() {
+    el('sDone').textContent = answered;
+    el('sOk').textContent = correct;
+    el('sBad').textContent = wrong;
+    el('sRate').textContent = (answered ? Math.round(correct / answered * 100) : 0) + '%';
+    el('qProgress').textContent = answered + ' / ' + gTotal;
+  }
+  function renderQuestion() {
+    var q = questions[idx];
+    el('qNo').innerHTML = '第 <em>' + (idx + 1) + '</em> / ' + gTotal + ' 题';
+    el('qText').textContent = q.t;
+    el('qCard').classList.remove('ok', 'bad');
+    var fb = el('fb');
+    fb.className = 'feedback'; fb.textContent = '';
+    var inp = el('answerInput');
+    inp.value = ''; inp.disabled = false;
+  }
+  function focusInput() {
+    setTimeout(function () {
+      if (state !== 'playing') return;
+      try { el('answerInput').focus(); } catch (e) {}
+    }, 10);
+  }
+
+  /* ================= 流程 ================= */
+  function startGame() {
+    gTotal = config.count;
+    gDuration = config.seconds;
+    questions = buildQuestions(config, gTotal);
+    idx = 0; answered = 0; correct = 0; wrong = 0; wrongList = [];
+    state = 'playing';
+
+    el('startScreen').classList.remove('show');
+    el('endScreen').classList.remove('show');
+    el('clockBox').classList.remove('pulse');
+    el('timeBar').classList.remove('low');
+    el('btnSubmit').disabled = false;
+    el('brandSub').textContent = diffName() + ' · ' + gTotal + ' 题 · ' + fmt(gDuration);
+
+    renderQuestion();
+    renderStats();
+
+    clearInterval(timerId);
+    clearTimeout(fbTimer);
+    endTime = Date.now() + gDuration * 1000;
+    tick();
+    timerId = setInterval(tick, 100);
+    focusInput();
+  }
+
+  function tick() {
+    var left = endTime - Date.now();
+    if (left < 0) left = 0;
+    el('timeText').textContent = fmt(left / 1000);
+    el('timeFill').style.width = (left / (gDuration * 1000) * 100) + '%';
+    var low = left <= 30000;
+    el('timeText').classList.toggle('warn', low);
+    el('timeBar').classList.toggle('low', low);
+    el('clockBox').classList.toggle('pulse', low && left > 0);
+    if (left <= 0) finish('time');
+  }
+
+  function submit() {
+    if (state !== 'playing') return;
+    var inp = el('answerInput');
+    var raw = inp.value.trim();
+    var q = questions[idx];
+    var num = raw === '' ? null : Number(raw);
+    var ok = num !== null && isFinite(num) && num === q.v;
+
+    answered++;
+    if (ok) correct++;
+    else { wrong++; wrongList.push({ no: idx + 1, t: q.t, user: raw === '' ? '未作答' : raw, ans: q.v }); }
+    renderStats();
+
+    var fb = el('fb');
+    if (ok) {
+      el('qCard').classList.add('ok');
+      fb.textContent = '✓ 答对了！';
+      fb.className = 'feedback ok show';
+    } else {
+      el('qCard').classList.add('bad');
+      fb.textContent = '✗ 答错了，正确答案是 ' + q.v;
+      fb.className = 'feedback bad show';
+    }
+    inp.disabled = true;
+    state = 'feedback';
+    clearTimeout(fbTimer);
+    fbTimer = setTimeout(advance, ok ? 620 : 1050);
+  }
+
+  function advance() {
+    clearTimeout(fbTimer);
+    if (state === 'ended') return;
+    if (idx + 1 >= gTotal) { finish('done'); return; }
+    idx++; state = 'playing';
+    renderQuestion();
+    focusInput();
+  }
+
+  function finish(reason) {
+    if (state === 'ended') return;
+    state = 'ended';
+    clearInterval(timerId); timerId = null;
+    clearTimeout(fbTimer);
+    el('clockBox').classList.remove('pulse');
+    el('btnSubmit').disabled = true;
+
+    var left = Math.max(0, endTime - Date.now());
+    var used = Math.min(gDuration, Math.round((gDuration * 1000 - left) / 1000));
+    var rate = answered ? (correct / answered * 100) : 0;
+    var missed = gTotal - answered;
+
+    el('endTitle').textContent = reason === 'time' ? '时间到！' : '全部答完！';
+    el('endSub').textContent = reason === 'time'
+      ? fmt(gDuration) + ' 已用完，来看看成绩单'
+      : '你在 ' + fmt(used) + ' 内完成了全部 ' + gTotal + ' 道题';
+
+    el('recap').innerHTML = '本局设置：<b>' + diffName() + '</b> · ' + rangeText() + ' · <b>' + gTotal +
+      ' 题</b> · <b>' + fmt(gDuration) + '</b> · ' + opsText() + (config.mixed ? ' + 混合' : '');
+    el('rRate').textContent = rate.toFixed(1) + '%';
+    el('rTime').textContent = fmt(used);
+    el('rOk').textContent = correct;
+    el('rBad').textContent = wrong + (missed > 0 ? ('（漏答 ' + missed + '）') : '');
+    el('wrongCount').textContent = wrongList.length ? wrongList.length + ' 题' : '';
+
+    var box = el('wrongBox');
+    if (!wrongList.length) {
+      box.innerHTML = '<div class="empty">' + (missed > 0
+        ? '已作答的题目全部正确，太棒了！'
+        : '太厉害了，全部答对，满分表现！') + '</div>';
+    } else {
+      var html = '<ul class="wrongs">';
+      for (var i = 0; i < wrongList.length; i++) {
+        var w = wrongList[i];
+        html += '<li><span class="q">' + w.t + '</span><span class="a">' + w.no + ' 题 · 你的答案 <u>' +
+          w.user + '</u> · 正确 <b>' + w.ans + '</b></span></li>';
+      }
+      html += '</ul>';
+      box.innerHTML = html;
+    }
+    el('endScreen').classList.add('show');
+    el('btnRestart').focus();
+  }
+
+  function backToSetup() {
+    state = 'idle';
+    el('endScreen').classList.remove('show');
+    el('startScreen').classList.add('show');
+    renderSetup();
+  }
+
+  /* ================= 设置交互 ================= */
+  el('diffChips').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-diff]');
+    if (b) applyPreset(b.getAttribute('data-diff'));
+  });
+
+  el('advToggle').addEventListener('click', function () {
+    var open = el('advPanel').classList.toggle('show');
+    this.classList.toggle('open', open);
+  });
+
+  el('advPanel').addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t.getAttribute) return;
+    var maxv = t.getAttribute('data-max');
+    if (maxv) {
+      draft.max = +maxv;
+      if (draft.max < 50) draft.mixed = false;
+      showTip(el('advTip'), '');
+      applyCustom();
+      return;
+    }
+    var op = t.getAttribute('data-op');
+    if (op) {
+      if (draft[op]) {
+        var others = ['add', 'sub', 'mul', 'div'].filter(function (k) { return k !== op && draft[k]; });
+        if (!others.length) { showTip(el('advTip'), '至少保留一种运算'); return; }
+        draft[op] = false;
+      } else {
+        draft[op] = true;
+      }
+      showTip(el('advTip'), '');
+      applyCustom();
+      return;
+    }
+    if (t.getAttribute('data-mix')) {
+      if (draft.max < 50) { showTip(el('advTip'), '两步混合需要数字上限 ≥ 50'); return; }
+      draft.mixed = !draft.mixed;
+      showTip(el('advTip'), '');
+      applyCustom();
+    }
+  });
+
+  el('countChips').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-count]');
+    if (!b) return;
+    config.count = +b.getAttribute('data-count');
+    usingCustomCount = false;
+    showTip(el('countTip'), '');
+    renderSetup();
+  });
+
+  el('timeChips').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-sec]');
+    if (!b) return;
+    config.seconds = +b.getAttribute('data-sec');
+    usingCustomTime = false;
+    showTip(el('timeTip'), '');
+    renderSetup();
+  });
+
+  el('countCustom').addEventListener('input', function () {
+    if (!this.value) { showTip(el('countTip'), ''); return; }
+    var v = parseInt(this.value, 10);
+    if (!isFinite(v) || v < COUNT_MIN || v > COUNT_MAX) {
+      showTip(el('countTip'), '请输入 ' + COUNT_MIN + ' ~ ' + COUNT_MAX + ' 之间的整数');
+      return;
+    }
+    showTip(el('countTip'), '');
+    config.count = v;
+    usingCustomCount = true;
+    renderSetup();
+  });
+  el('countCustom').addEventListener('blur', function () {
+    var v = parseInt(this.value, 10);
+    if (!isFinite(v)) { usingCustomCount = false; renderSetup(); return; }
+    config.count = clamp(v, COUNT_MIN, COUNT_MAX);
+    usingCustomCount = true;
+    showTip(el('countTip'), '');
+    renderSetup();
+  });
+
+  el('timeCustom').addEventListener('input', function () {
+    if (!this.value) { showTip(el('timeTip'), ''); return; }
+    var v = parseInt(this.value, 10);
+    if (!isFinite(v) || v < SEC_MIN || v > SEC_MAX) {
+      showTip(el('timeTip'), '请输入 ' + SEC_MIN + ' ~ ' + SEC_MAX + ' 秒');
+      return;
+    }
+    showTip(el('timeTip'), '');
+    config.seconds = v;
+    usingCustomTime = true;
+    renderSetup();
+  });
+  el('timeCustom').addEventListener('blur', function () {
+    var v = parseInt(this.value, 10);
+    if (!isFinite(v)) { usingCustomTime = false; renderSetup(); return; }
+    config.seconds = clamp(v, SEC_MIN, SEC_MAX);
+    usingCustomTime = true;
+    showTip(el('timeTip'), '');
+    renderSetup();
+  });
+
+  /* ================= 游戏交互 ================= */
+  el('btnStart').addEventListener('click', startGame);
+  el('btnRestart').addEventListener('click', startGame);
+  el('btnSettings').addEventListener('click', backToSetup);
+  el('btnSubmit').addEventListener('click', submit);
+
+  el('btnFinish').addEventListener('click', function () {
+    if (state !== 'playing' && state !== 'feedback') return;
+    if (window.confirm('确定要提前交卷吗？未作答的题目将记为漏答。')) finish('manual');
+  });
+
+  el('answerInput').addEventListener('input', function () {
+    this.value = this.value.replace(/[^\d]/g, '').slice(0, 4);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.keyCode !== 13) return;
+    var t = e.target || {};
+    if (t.tagName === 'BUTTON') return;                 // 焦点在按钮上时交给按钮自身处理
+    if (state === 'idle') {
+      e.preventDefault();
+      if (t.tagName === 'INPUT' && t.id !== 'answerInput') { t.blur(); return; }  // 正在填自定义值
+      startGame();
+      return;
+    }
+    if (state === 'ended') { e.preventDefault(); startGame(); return; }
+    e.preventDefault();
+    if (state === 'playing') submit();
+    else if (state === 'feedback') { clearTimeout(fbTimer); advance(); }
+  });
+
+  /* ================= 初始化 ================= */
+  load();
+  if (config.diff === 'custom') applyCustom(); else applyPreset(config.diff);
+  gTotal = config.count;
+  gDuration = config.seconds;
+  renderStats();
+  renderSetup();
+})();
+</script>
+</body>
+</html>

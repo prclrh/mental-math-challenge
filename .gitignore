@@ -1,0 +1,15 @@
+# 系统与个人数据（不上传）
+.workbuddy/
+
+# macOS
+.DS_Store
+._*
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+
+# 依赖与日志
+node_modules/
+npm-debug.log*
